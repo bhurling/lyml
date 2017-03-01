@@ -73,6 +73,10 @@ public class YmlParser {
     }
 
     public void createResources(boolean android, boolean ios, boolean windows, boolean java) throws IOException {
+        if (mDefaultLocale == null) {
+            System.out.println("Failed to load translations.");
+            return;
+        }
 
         // Fetch a list of (alphabetically sorted) keys from the default locale's set of translations
         ArrayList<String> keys = new ArrayList<>(mTranslations.get(mDefaultLocale.toString()).keySet());
