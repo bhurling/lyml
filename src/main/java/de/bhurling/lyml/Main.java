@@ -3,19 +3,13 @@ package de.bhurling.lyml;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import org.apache.commons.cli.*;
 
 public class Main {
-
     private static String USAGE =
-            "\nusage: java -jar lyml.jar <api-token> [<api-token>...]\n";
+            "java -jar lyml.jar <api-token> [<api-token>...]";
 
     public static void main(String[] args) throws Exception {
-
-        if (args.length == 0) {
-            System.out.println(USAGE);
-            System.exit(1);
-        }
-
         String fileName = "/truststore.jks"; // java does not trust the COMODO certificate for some reason
 
         InputStream in = Main.class.getResourceAsStream(fileName);
@@ -34,8 +28,61 @@ public class Main {
         String path = tempFile.toString();
         System.setProperty("javax.net.ssl.trustStore", path); // so we use a custom keystore
 
-        YmlParser parser = new YmlParser(args);
-        parser.fetchFromLocaleApp();
-        parser.createResources();
+        // parse command line options
+        Options options = new Options();
+        options.addOption("h", "help", false, "print this help");
+        options.addOption(Option.builder("e").longOpt("export").desc("comma separated list of target export platforms (iOS, Android, Windows, Java)").hasArg().build());
+
+        // default export options
+        boolean android = true;
+        boolean ios = true;
+        boolean windows = true;
+        boolean java = true;
+
+        try {
+            CommandLineParser commandLineParser = new DefaultParser();
+            CommandLine line = commandLineParser.parse(options, args);
+
+            // show help
+            if (line.getArgs().length == 0 || line.hasOption("h")) {
+                HelpFormatter formatter = new HelpFormatter();
+                formatter.printHelp(USAGE, "", options, "", true);
+                System.exit(1);
+            }
+
+            // specific export options
+            if (line.hasOption("e")) {
+                // reset all export options
+                android = false;
+                ios = false;
+                windows = false;
+                java = false;
+
+                String[] exportPlatforms = line.getOptionValue("e").split(",");
+
+                for (String p: exportPlatforms) {
+                    if (p.equalsIgnoreCase("android")) {
+                        android = true;
+                    } else if (p.equalsIgnoreCase("ios")) {
+                        ios = true;
+                    } else if (p.equalsIgnoreCase("windows")) {
+                        windows = true;
+                    } else if (p.equalsIgnoreCase("java")) {
+                        java = true;
+                    } else {
+                        System.out.println("Unknown export platform " + p + " - skipping");
+                    }
+                }
+            }
+
+            if (!(android || ios || windows || java)) {
+                System.out.println("No target export platforms.");
+                System.exit(1);
+            }
+
+            YmlParser parser = new YmlParser(line.getArgs());
+            parser.fetchFromLocaleApp();
+            parser.createResources(android, ios, windows, java);
+        } catch (ParseException ignored) {}
     }
 }
