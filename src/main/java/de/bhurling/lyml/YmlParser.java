@@ -72,16 +72,31 @@ public class YmlParser {
         }
     }
 
-    public void createResources() throws IOException {
+    public void createResources(boolean android, boolean ios, boolean windows, boolean java) throws IOException {
+        if (mDefaultLocale == null) {
+            System.out.println("Failed to load translations.");
+            return;
+        }
 
         // Fetch a list of (alphabetically sorted) keys from the default locale's set of translations
         ArrayList<String> keys = new ArrayList<>(mTranslations.get(mDefaultLocale.toString()).keySet());
         Collections.sort(keys);
 
-        createAndroidResources(keys);
-        createIosResources(keys);
-        createWinPhoneResources(keys);
-        createJavaResources(keys);
+        if (android) {
+            createAndroidResources(keys);
+        }
+
+        if (ios) {
+            createIosResources(keys);
+        }
+
+        if (windows) {
+            createWinPhoneResources(keys);
+        }
+
+        if (java) {
+            createJavaResources(keys);
+        }
 
         System.out.println("\nDone. Have a look into\n\n" + mOutputDirectory.getAbsolutePath()
                 + "\n\nto find your files. Have a nice day!\n\n");
